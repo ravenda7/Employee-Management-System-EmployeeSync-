@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Company {
+  id          String   @id @default(uuid())
+  name        String
+  adminEmail  String   @unique
+  createdAt   DateTime @default(now())
+  whitelistedIpRanges WhitelistedIpRange[]
+  employees   Employee[]
+  payrolls    Payroll[]
+  attendances Attendance[]
+  leaves      Leave[]
+  shifts      Shift[]
+  auditLogs   AuditLog[]
+}
+
+model WhitelistedIpRange {
+  id           String @id @default(uuid())
+  companyId    String 
+  company      Company @relation(fields: [companyId], references: [id])
+  minIpRange   String // e.g., "192.168.0.1"
+  maxIpRange   String // e.g., "192.168.0.255"
+  createdAt    DateTime @default(now())
+  @@index([companyId])
+}
+
+model Employee {
+  id             String   @id @default(uuid())
+  companyId      String?
+  name           String
+  email          String   @unique
+  hashedPassword String?
+  role           Role     @default(EMPLOYEE)
+  approvedDeviceIds String[] @default([])
+  permissions    String[] @default([])
+  department     String?
+  baseSalary     Float    @default(30000.0)
+  hourlyRate     Float?   // Auto-calc: baseSalary / 160
+  allowances     Json?    // e.g., { medical: 2000 }
+  joinDate       DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  company        Company? @relation(fields: [companyId], references: [id]) // Optional relation
+  payrolls       Payroll[]
+  attendances    Attendance[]
+  leaves         Leave[]
+  shifts         Shift[]
+  auditLogs      AuditLog[]
+}
+
+model Payroll {
+  id             String   @id @default(uuid())
+  companyId      String
+  empId          String
+  startDate      DateTime
+  endDate        DateTime
+  gross          Float
+  deductions     Float
+  net            Float
+  regularHours   Float
+  overtimeHours  Float
+  isPaid         Boolean  @default(false)
+  paidDate       DateTime?
+  note           String?  // e.g., 'Live Preview'
+  createdAt      DateTime @default(now())
+  company        Company  @relation(fields: [companyId], references: [id])
+  employee       Employee @relation(fields: [empId], references: [id])
+}
+
+model Attendance {
+  id         String   @id @default(uuid())
+  companyId  String
+  empId      String
+  timestamp  DateTime @default(now())
+  type       AttType  @default(CHECK_IN)
+    // --- NEW: AUDIT FIELDS ---
+  loggedIp            String
+  deviceId            String
+  verificationStatus  VerificationStatus  @default(REMOTE)
+  isSuspicious        Boolean             @default(false)
+
+  // Store raw IP lookup data or location info
+  ipCheckDetails      Json?
+  company    Company  @relation(fields: [companyId], references: [id])
+  employee   Employee @relation(fields: [empId], references: [id])
+}
+
+model Leave {
+  id         String   @id @default(uuid())
+  companyId  String
+  empId      String
+  startDate  DateTime
+  endDate    DateTime
+  status     LeaveStatus @default(PENDING)
+  isPaid     Boolean     @default(true)
+  company    Company     @relation(fields: [companyId], references: [id])
+  employee   Employee    @relation(fields: [empId], references: [id])
+}
+
+model Shift {
+  id         String   @id @default(uuid())
+  companyId  String
+  empId      String
+  startTime  DateTime
+  endTime    DateTime
+  company    Company  @relation(fields: [companyId], references: [id])
+  employee   Employee @relation(fields: [empId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  companyId String
+  userId    String
+  action    String
+  timestamp DateTime @default(now())
+  company   Company  @relation(fields: [companyId], references: [id])
+  employee  Employee @relation(fields: [userId], references: [id])
+}
+
+enum VerificationStatus {
+  IN_OFFICE
+  REMOTE
+  MANUAL_ADJUSTMENT
+}
+
+enum Role {
+  SUPER_ADMIN
+  COMPANY_ADMIN
+  COMPANY_HR
+  EMPLOYEE
+}
+
+enum AttType {
+  CHECK_IN
+  CHECK_OUT
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
