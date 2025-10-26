@@ -197,7 +197,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { LayoutDashboard, ShieldUser, Users, Building2, Bell, Podcast } from 'lucide-react';
+import { LayoutDashboard, IdCardLanyard, Users, Building2, Bell, Podcast } from 'lucide-react';
 import { NavMain } from "./nav-main";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -246,7 +246,7 @@ interface NavItem {
 
 const allMenuItems: NavItem[] = [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR", "EMPLOYEE"] },
-    { title: "Manage Admins", url: "/manage-admin", icon: ShieldUser, requiredRoles: ["COMPANY_ADMIN"] },
+    { title: "Manage Employee", url: "/manage-employee", icon: IdCardLanyard, requiredRoles: ["COMPANY_ADMIN"] },
     { title: "Whitelist IP", url: "/ip-whitelist", icon: Podcast, requiredRoles: ["COMPANY_ADMIN"] },
     { title: "All Employees", url: "/employees", icon: Users, requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR"] },
     { title: "My Profile", url: "/profile", icon: Users, requiredRoles: ["EMPLOYEE"] }, 

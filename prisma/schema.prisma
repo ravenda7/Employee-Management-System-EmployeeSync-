@@ -27,6 +27,22 @@ model Company {
   leaves      Leave[]
   shifts      Shift[]
   auditLogs   AuditLog[]
+  departments     Department[]
+}
+
+model Department {
+  id        String     @id @default(uuid())
+  companyId String
+  name      String
+  
+  // Relations
+  company   Company    @relation(fields: [companyId], references: [id])
+  employees Employee[] // Relation to the employees in this department
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([companyId])
+  @@unique([companyId, name]) // Ensures a company can't have two departments with the same name
 }
 
 model WhitelistedIpRange {
@@ -48,14 +64,15 @@ model Employee {
   role           Role     @default(EMPLOYEE)
   approvedDeviceIds String[] @default([])
   permissions    String[] @default([])
-  department     String?
+  departmentId     String?
   baseSalary     Float    @default(30000.0)
   hourlyRate     Float?   // Auto-calc: baseSalary / 160
   allowances     Json?    // e.g., { medical: 2000 }
   joinDate       DateTime @default(now())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  company        Company? @relation(fields: [companyId], references: [id]) // Optional relation
+  company        Company? @relation(fields: [companyId], references: [id])
+  department       Department? @relation(fields: [departmentId], references: [id])
   payrolls       Payroll[]
   attendances    Attendance[]
   leaves         Leave[]
