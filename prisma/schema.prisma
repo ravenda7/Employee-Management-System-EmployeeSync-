@@ -61,6 +61,8 @@ model Employee {
   name           String
   email          String   @unique
   hashedPassword String?
+  avatarUrl     String?      // Optional avatar URL
+  isActive      Boolean      @default(true) // Employee can be deactivated
   role           Role     @default(EMPLOYEE)
   approvedDeviceIds String[] @default([])
   permissions    String[] @default([])
