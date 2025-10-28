@@ -104,3 +104,85 @@ export async function POST(req: NextRequest, context: EmployeeContext) {
     }
 }
     
+
+const MANDATORY_ROLES = ["COMPANY_HR", "EMPLOYEE"]; 
+
+export async function GET(req: NextRequest, context: EmployeeContext) {
+    try {
+        // --- 1. Extract Path and Query Parameters ---
+        const params = await context.params;
+        const companyId = params.companyId;
+
+        const { searchParams } = new URL(req.url);
+        const search = searchParams.get("search") || "";
+        // Capture page and limit values
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "10");
+        const department = searchParams.get("department");
+        const requestedRole = searchParams.get("role"); 
+
+        // --- 2. Construct Where Clause with Role Filtering ---
+        
+        // Determine the final set of roles to use for the filter
+        const rolesToFilterBy = requestedRole && MANDATORY_ROLES.includes(requestedRole)
+            ? [requestedRole as any] // If a valid, allowed role is requested, filter by it
+            : (MANDATORY_ROLES as any); // Otherwise, use the default mandatory set
+            
+        const finalWhere = {
+            // Must belong to the company
+            companyId,
+            
+            // Search filter by name (case-insensitive)
+            name: { contains: search, mode: "insensitive" as const },
+            
+            // Department filter (optional)
+            ...(department && { departmentId: department }),
+            
+            // Role filter (mandatory constraint, optional narrowing by user)
+            role: {
+                in: rolesToFilterBy 
+            }
+        };
+
+
+        // --- 3. Fetch Employees and Total Count ---
+        const employees = await db.employee.findMany({
+            where: finalWhere,
+            skip: (page - 1) * limit,
+            take: limit,
+            orderBy: {
+                name: "asc"
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                avatarUrl: true,
+                baseSalary: true,
+                joinDate: true,
+                isActive: true,
+                departmentId: true,
+                department: true,
+            }
+        });
+
+        const totalEmployees = await db.employee.count({ where: finalWhere });
+
+        // --- 4. Return Response in the Desired Format ---
+        return NextResponse.json({
+            data: {
+                employees,
+                total: totalEmployees, // Renamed from totalEmployees to total
+                page,                  // Added page number
+                limit                  // Added limit per page
+            }
+        });
+
+    } catch (error) {
+        console.error('Error fetching Employees:', error);
+        return NextResponse.json({
+            message: "An unexpected error occurred while fetching Employees."
+        }, { status: 500 });
+    }
+}
