@@ -1,7 +1,7 @@
 
 
-interface Department {
-  id: number;
+export interface Department {
+  id: string;
   name: string;
   companyId: string;
   createdAt: string;
@@ -22,10 +22,12 @@ interface GetEmployees {
 }
 
 export interface GetEmployeeAPIResponse {
-    data: GetEmployees[];
+  data: {
+    employees: GetEmployees[];
     total: number;
     page: number;
     limit: number;
+  }
 }
 
 export type EmployeeFilter = {
