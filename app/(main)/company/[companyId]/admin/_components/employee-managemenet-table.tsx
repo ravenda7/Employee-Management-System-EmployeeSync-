@@ -9,17 +9,23 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useSessionData } from "@/context/session";
 import shortenName from "@/lib/name-shorten";
-import { Department, EmployeeFilter, GetEmployeeAPIResponse } from "@/types/employee.type";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Search, SquarePen, Trash2, User } from "lucide-react";
+import { Department, EmployeeFilter, GetEmployeeAPIResponse, GetEmployees } from "@/types/employee.type";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft, ArrowRight, HandCoins, Search, SquarePen, Trash2, User } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
+import AllowanceManagementDialog from "./allowance-dialog";
 
 export default function EmployeeManagementTable() {
     const { user } = useSessionData();
+    const queryClient = useQueryClient();
+    const [isPending, startTransition] = useTransition();
     const companyId = user?.companyId;
     const [filters, setFilters] = useState<EmployeeFilter>({
         searchTerm: '',
@@ -30,9 +36,13 @@ export default function EmployeeManagementTable() {
     });
     const [searchInput, setSearchInput] = useState('');
     const [debouncedSearch, setDebouncedSearch] = useState('');
+    const [isAllowanceModalOpen, setIsAllowanceModalOpen] = useState(false);
+    const [selectedEmployee, setSelectedEmployee] = useState<GetEmployees | null>(null);
+
+
 
     // Data fetching
-    const { data, isPending } = useQuery<GetEmployeeAPIResponse>({
+    const { data, isPending:isEmployeePending } = useQuery<GetEmployeeAPIResponse>({
         queryKey: ['employees', filters],
         queryFn: async () => {
             const res = await fetch(`/api/company/${companyId}/employee?search=${filters.searchTerm}&department=${filters.department}&role=${filters.requestedRole}&page=${filters.page}&limit=${filters.limit}`);
@@ -43,14 +53,39 @@ export default function EmployeeManagementTable() {
 
     console.log("Employee Data:", data?.data.employees);
 
-    const { data:departments, isLoading } = useQuery({
+    const { data:departments, isLoading: isDepartmentLoading} = useQuery({
         queryKey: ["department"],
         queryFn: async () => {
         const res = await fetch(`/api/company/${companyId}/department`);
         if (!res.ok) throw new Error("Failed to fetch departments");
         return res.json()
         },
-    })
+    });
+
+    const handleStatusChange = async (employeeId: string, currentStatus: boolean) => {
+        startTransition(async () => {
+            try {
+                const newStatus = !currentStatus;
+                const response = await fetch(`/api/employees/${employeeId}/status`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ isActive: newStatus }),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to update status.");
+                }
+                toast.success(`Employee ${newStatus ? 'activated' : 'deactivated'} successfully.`);
+                queryClient.invalidateQueries({ queryKey: ['employees'] });
+
+            } catch (error) {
+                console.error("Status update error:", error);
+                toast.error("Error updating status. Please try again.");
+            }
+        });
+    };
 
     //Debounce search input
     useEffect(() => {
@@ -91,33 +126,44 @@ export default function EmployeeManagementTable() {
 
     const totalPages = data?.data.total ? Math.ceil(data.data.total / data.data.limit) : 0;
 
+    const handleManageAllowances = (employee: GetEmployees) => {
+        setSelectedEmployee(employee);
+        setIsAllowanceModalOpen(true);
+    };
+
+    const handleCloseDialog = () => {
+        setIsAllowanceModalOpen(false);
+    };
+
     return (
         <>
             <Card>
                 <CardContent>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <div>
                         <p className="text-lg font-semibold">Employee Management</p>
                         <p className="text-sm text-muted-foreground">Manage employee profiles, attendance, and more.</p>
                     </div>
 
                     <Link href={`/company/${companyId}/admin/manage-employee/new`}>
-                        <Button className="cursor-pointer" >Create Employee</Button>
+                        <Button className="w-full sm:w-auto cursor-pointer" >Create Employee</Button>
                     </Link>
                 </div>
                 </CardContent>
             </Card>
-            <div  className="px-4 lg:px-6 w-full">
+            <div  className="w-full">
                 <Card>
                     <CardHeader>
-                        <div className="flex items-center justify-between gap-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="w-full relative">
                                 <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                                 <Input 
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)} placeholder="Search...." className="pl-10" />
                             </div>
-                            <Select
+                            {isDepartmentLoading ? (
+                                <Loader />
+                            ) : <Select
                                 value={filters.department || "all"}
                                 onValueChange={(value) => {
                                     setFilters((prev) => ({
@@ -127,7 +173,7 @@ export default function EmployeeManagementTable() {
                                     }));
                                 }}
                             >
-                                <SelectTrigger className="w-48">
+                                <SelectTrigger className="w-full sm:w-48">
                                     <SelectValue placeholder="Filter" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -138,25 +184,23 @@ export default function EmployeeManagementTable() {
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
-                            </Select>
-
+                            </Select>}
                         </div>
                     </CardHeader>
                     <CardContent className="border-t-1 border-gray-200 border-b-1 py-2">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-gray-50">
-                                <TableHead><Checkbox /></TableHead>
                                 <TableHead className="pl-4">Name</TableHead>
                                 <TableHead>Email</TableHead>
                                 <TableHead>Department</TableHead>
-                                <TableHead>Stats</TableHead>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Role</TableHead>
-                                <TableHead className="text-right pr-5">Actions</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {isPending ? ( 
+                        {isEmployeePending ? ( 
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center py-6">
                                     <Loader className="mx-auto" />
@@ -165,9 +209,6 @@ export default function EmployeeManagementTable() {
                         ) : (
                             data?.data.employees.map((employee) => (
                             <TableRow key={employee.id}>
-                                <TableCell className="w-4">
-                                    <Checkbox />
-                                </TableCell>
                                 <TableCell className="pl-4">
                                     <div className="flex items-center gap-2">
                                         <Avatar>
@@ -185,22 +226,54 @@ export default function EmployeeManagementTable() {
                                     {employee.department?.name ?? 'N/A'}
                                 </TableCell>
                                 <TableCell>
-                                    <Badge className="bg-green-100 text-green-800">Active</Badge>
+                                    <Switch
+                                        checked={employee.isActive}
+                                        disabled={isPending} 
+                                        onCheckedChange={() => handleStatusChange(employee.id, employee.isActive)}
+                                        className={employee.isActive ? "data-[state=checked]:bg-green-600" : ""}
+                                    />
                                 </TableCell>
                                 <TableCell>
                                     {getRole(employee.role)}
                                 </TableCell>
                                 <TableCell className="flex justify-end">
-                                    <Link href={`/admin/employee/edit/${employee.id}`} >
-                                        <Button variant="icon" className="hover:text-sky-600">
-                                            <SquarePen />
-                                        </Button>
-                                    </Link>
-                                    <Link href={`/admin/employee/delete/${employee.id}`} >
-                                        <Button variant="icon" className="hover:text-red-600">
-                                            <Trash2 />
-                                        </Button>
-                                    </Link> 
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="icon" className="hover:text-green-600"
+                                            onClick={() => handleManageAllowances(employee)}>
+                                                <HandCoins />
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Manage Allowance</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Link href={`/admin/employee/edit/${employee.id}`}>
+                                                <Button variant="icon" className="hover:text-sky-600 w-fit">
+                                                    <SquarePen />
+                                                </Button>
+                                            </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Edit Employee</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Link href={`/admin/employee/delete/${employee.id}`}>
+                                                <Button variant="icon" className="hover:text-red-600">
+                                                    <Trash2 />
+                                                </Button>
+                                            </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>Delete Employee</p>
+                                        </TooltipContent>
+                                    </Tooltip>
                                 </TableCell>
                             </TableRow>
                             )))}
@@ -306,6 +379,13 @@ export default function EmployeeManagementTable() {
                     </CardFooter>
                 </Card>
                 </div>
+            {selectedEmployee && (
+                <AllowanceManagementDialog
+                open={isAllowanceModalOpen}
+                onOpenChange={handleCloseDialog}
+                employee={selectedEmployee}
+                />
+            )}
         </>
     );
 }

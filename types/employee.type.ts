@@ -1,4 +1,7 @@
-
+export type EmployeeAllowances = {
+    // Allows any string key (e.g., "medical", "travel")
+    [key: string]: number; 
+} | null;
 
 export interface Department {
   id: string;
@@ -8,11 +11,12 @@ export interface Department {
   updatedAt: string;
 }
 
-interface GetEmployees {
-  id: number;
+export interface GetEmployees {
+  id: string;
   email: string;
   name: string;
   avatarUrl: string | null;
+  allowences?: EmployeeAllowances;
   isActive: boolean;
   departmentId: string;
   joinDate: string;
