@@ -1,6 +1,4 @@
 import { SiteHeader } from "@/components/layout/company/site-header";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import EmployeeManagementTable from "../_components/employee-managemenet-table";
 
 export default function ManageEmployeePage() {

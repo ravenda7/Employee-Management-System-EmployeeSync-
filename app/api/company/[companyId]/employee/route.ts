@@ -164,6 +164,7 @@ export async function GET(req: NextRequest, context: EmployeeContext) {
                 isActive: true,
                 departmentId: true,
                 department: true,
+                allowances: true,
             }
         });
 
