@@ -12,16 +12,18 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useSessionData } from "@/context/session";
 import shortenName from "@/lib/name-shorten";
 import { Department, EmployeeFilter, GetEmployeeAPIResponse, GetEmployees } from "@/types/employee.type";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, HandCoins, Search, SquarePen, Trash2, User } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import AllowanceManagementDialog from "./allowance-dialog";
+import { useConfirmDialog } from "@/context/confirm-dialog";
 
 export default function EmployeeManagementTable() {
     const { user } = useSessionData();
     const queryClient = useQueryClient();
+    const confirm = useConfirmDialog();
     const [isPending, startTransition] = useTransition();
     const companyId = user?.companyId;
     const [filters, setFilters] = useState<EmployeeFilter>({
@@ -84,6 +86,18 @@ export default function EmployeeManagementTable() {
         });
     };
 
+    const deleteMutation = useMutation({
+        mutationFn: async (id: string) => {
+        const res = await fetch(`/api/employees/${id}`, { method: "DELETE" })
+        if (!res.ok) throw new Error("Delete failed")
+        return res.json()
+        },
+        onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ["employees"] })
+        toast.success("employee deleted successfully")
+        },
+    })
+
     //Debounce search input
     useEffect(() => {
         const handler = setTimeout(() => {
@@ -131,6 +145,18 @@ export default function EmployeeManagementTable() {
     const handleCloseDialog = () => {
         setIsAllowanceModalOpen(false);
     };
+
+    const handleEmployeeDelete = async (employeeId: string, name: string) => {
+        const ok = await confirm({
+        title: "Delete Employee",
+        description: `Are you sure you want to delete this "${name}"? This action cannot be undone.`,
+        confirmText: "Delete",
+        cancelText: "Cancel",
+        });
+        if (ok) {
+        deleteMutation.mutate(employeeId)
+        }
+    }
 
     return (
         <>
@@ -248,7 +274,7 @@ export default function EmployeeManagementTable() {
 
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Link href={`/admin/employee/edit/${employee.id}`}>
+                                            <Link href={`/company/${companyId}/admin/manage-employee/edit/${employee.id}`}>
                                                 <Button variant="icon" className="hover:text-sky-600 w-fit">
                                                     <SquarePen />
                                                 </Button>
@@ -261,11 +287,13 @@ export default function EmployeeManagementTable() {
 
                                     <Tooltip>
                                         <TooltipTrigger asChild>
-                                            <Link href={`/admin/employee/delete/${employee.id}`}>
-                                                <Button variant="icon" className="hover:text-red-600">
+                                                <Button 
+                                                variant="icon" 
+                                                onClick={() => handleEmployeeDelete(employee.id, employee.name)}
+                                                disabled={deleteMutation.isPending}
+                                                className="hover:text-red-600">
                                                     <Trash2 />
                                                 </Button>
-                                            </Link>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                             <p>Delete Employee</p>
