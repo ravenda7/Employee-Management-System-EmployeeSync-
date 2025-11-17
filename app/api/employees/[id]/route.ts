@@ -46,6 +46,7 @@ export async function PATCH(req: NextRequest, context: EmployeeAPI) {
     const name = formData.get("name") as string;
     const email = formData.get("email") as string;
     const departmentIdRaw = formData.get("departmentId") as string | null;
+    const shiftIdRaw = formData.get("shiftId") as string | null;
     const baseSalaryRaw = formData.get("baseSalary") as string | null;
     const image = formData.get("image") as File | null;
 
@@ -99,6 +100,7 @@ export async function PATCH(req: NextRequest, context: EmployeeAPI) {
         name,
         email,
         departmentId: departmentIdRaw ?? null,
+        shiftId: shiftIdRaw ?? null,
         baseSalary,
         hourlyRate,
         avatarUrl,

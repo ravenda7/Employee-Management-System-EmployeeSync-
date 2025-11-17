@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 
 const ChangePasswordSchema = z
   .object({
-    currentPassword: z.string().min(6, "Current password is required"),
     newPassword: z.string().min(6, "New password must be at least 6 characters"),
     confirmPassword: z.string().min(6, "Please confirm your new password"),
   })
@@ -46,20 +45,17 @@ export default function EditEmployeePassword({ employeeId }: ChangePasswordFormP
     resolver: zodResolver(ChangePasswordSchema),
     mode: "onChange"
   });
-
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const mutation = useMutation({
     mutationFn: async (data: ChangePasswordFormData) => {
-      const response = await fetch(`/api/admin/${employeeId}/change-password`, {
+      const response = await fetch(`/api/employees/${employeeId}/reset-password`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          oldPassword: data.currentPassword,
           newPassword: data.newPassword,
         }),
       });
@@ -121,13 +117,6 @@ export default function EditEmployeePassword({ employeeId }: ChangePasswordFormP
       </CardHeader>
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <CardContent className="space-y-4">
-          {renderPasswordField(
-            "Current Password",
-            "currentPassword",
-            showCurrent,
-            setShowCurrent,
-            errors.currentPassword?.message
-          )}
           {renderPasswordField(
             "New Password",
             "newPassword",

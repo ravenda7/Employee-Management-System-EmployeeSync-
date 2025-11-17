@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
   provider = "prisma-client-js"
@@ -25,6 +20,7 @@ model Company {
   payrolls    Payroll[]
   attendances Attendance[]
   leaves      Leave[]
+  leaveTypes  LeaveType[]
   shifts      Shift[]
   auditLogs   AuditLog[]
   departments     Department[]
@@ -65,6 +61,7 @@ model Employee {
   isActive      Boolean      @default(true) // Employee can be deactivated
   role           Role     @default(EMPLOYEE)
   approvedDeviceIds String[] @default([])
+  unverifiedDeviceIds String[]  @default([]) 
   permissions    String[] @default([])
   departmentId     String?
   baseSalary     Float    @default(30000.0)
@@ -75,10 +72,14 @@ model Employee {
   updatedAt      DateTime @updatedAt
   company        Company? @relation(fields: [companyId], references: [id])
   department       Department? @relation(fields: [departmentId], references: [id])
+  
+  shiftId          String?
+  shift            Shift?       @relation(fields: [shiftId], references: [id])
+
   payrolls       Payroll[]
   attendances    Attendance[]
   leaves         Leave[]
-  shifts         Shift[]
+  decidedLeaves  Leave[] @relation("LeaveDecider")
   auditLogs      AuditLog[]
 }
 
@@ -107,39 +108,82 @@ model Attendance {
   empId      String
   timestamp  DateTime @default(now())
   type       AttType  @default(CHECK_IN)
-    // --- NEW: AUDIT FIELDS ---
   loggedIp            String
   deviceId            String
   verificationStatus  VerificationStatus  @default(REMOTE)
   isSuspicious        Boolean             @default(false)
-
   // Store raw IP lookup data or location info
   ipCheckDetails      Json?
+  // NEW: which shift was applied when creating this record
+  shiftId             String?
+  shift               Shift?   @relation(fields: [shiftId], references: [id])
+  // NEW: for CHECK_IN
+  scheduledStartTime  DateTime?
+  checkInDelayMinutes Int?
+  // NEW: for CHECK_OUT
+  scheduledEndTime      DateTime?
+  earlyCheckoutMinutes  Int?
   company    Company  @relation(fields: [companyId], references: [id])
   employee   Employee @relation(fields: [empId], references: [id])
 }
 
 model Leave {
-  id         String   @id @default(uuid())
-  companyId  String
-  empId      String
-  startDate  DateTime
-  endDate    DateTime
-  status     LeaveStatus @default(PENDING)
-  isPaid     Boolean     @default(true)
-  company    Company     @relation(fields: [companyId], references: [id])
-  employee   Employee    @relation(fields: [empId], references: [id])
+  id           String   @id @default(cuid())
+  companyId    String
+  empId        String
+  leaveTypeId  String
+  startDate    DateTime
+  endDate      DateTime
+  duration     Int
+  status       LeaveStatus @default(PENDING)
+  isPaid       Boolean
+  reason       String? // employee reason
+
+  decisionNote String?      // HR/Admin note (optional)
+  decidedById  String?      // who approved/rejected
+  decidedBy    Employee?    @relation("LeaveDecider", fields: [decidedById], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company      Company  @relation(fields: [companyId], references: [id])
+  employee     Employee @relation(fields: [empId], references: [id])
+  leaveType    LeaveType @relation(fields: [leaveTypeId], references: [id])
 }
 
+
+
+model LeaveType {
+  id               String   @id @default(uuid())
+  companyId        String
+  name             String          // "Sick Leave"
+  code             String          // "SL"
+  yearlyLimit      Float?          // days per year, null = unlimited
+  isPaid           Boolean @default(true)
+  requiresApproval Boolean @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  company          Company  @relation(fields: [companyId], references: [id])
+  leaves           Leave[]
+
+  @@unique([companyId, code])
+  @@unique([companyId, name])
+}
+
+
 model Shift {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   companyId  String
-  empId      String
+  name       String
   startTime  DateTime
   endTime    DateTime
-  company    Company  @relation(fields: [companyId], references: [id])
-  employee   Employee @relation(fields: [empId], references: [id])
+  createdAt  DateTime  @default(now())
+  company    Company   @relation(fields: [companyId], references: [id])
+  employees  Employee[]
+  attendances Attendance[]
 }
+
+
 
 model AuditLog {
   id        String   @id @default(uuid())

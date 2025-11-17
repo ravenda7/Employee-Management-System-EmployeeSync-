@@ -1,9 +1,14 @@
+import { SiteHeader } from "@/components/layout/company/site-header";
+import Dashboard from "../_components/dashboard";
 
-export default function EmployeeDashboard() {
+export default async function EmployeeDashboard() {
 
     return (
-        <div>
-            Employee Dashboard
-        </div>
+        <>
+            <SiteHeader title="Dashboard" />
+            <section className="px-4 lg:px-6 py-4 flex flex-col gap-y-4">
+                <Dashboard />
+            </section>
+        </>
     )
 }

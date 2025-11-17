@@ -7,18 +7,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSessionData } from "@/context/session"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { MoveLeft } from "lucide-react"
+import { Eye, EyeClosed, EyeOff, MoveLeft, RefreshCcw } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import z from "zod"
 import ImageUpload from "../../_components/image-upload"
+import { generateRandomPassword } from "@/lib/password-generator"
+import { useRouter } from "next/navigation"
+import { formatDateToTimeString } from "@/lib/time"
 
 const employeeSchema = z.object({
     email: z.email(),
     password: z.string().min(6, "Password must be at least 6 characters long"),
     name: z.string().min(1, "Name is required"),
     departmentId: z.uuid("Invalid department ID"),
+    shiftId: z.uuid("Invalid shift ID"),
     baseSalary: z.number().min(0, "Base salary must be a positive number"),
     role: z.enum(['EMPLOYEE', 'COMPANY_HR'])
 })
@@ -39,8 +43,10 @@ type EmployeeFormData = z.infer<typeof employeeSchema>
 
 export default function NewEmployeePage() {
     const { user } = useSessionData();
+    const router = useRouter();
     const companyId = user?.companyId;
     const [image, setImage] = useState<File | null>(null);
+    const [isShow, setIsShow] = useState(false);
     const queryClient = useQueryClient();
     const {
         register,
@@ -55,6 +61,7 @@ export default function NewEmployeePage() {
             password: "",
             name: "",
             departmentId: "",
+            shiftId: "",
             baseSalary: 0,
             role: "EMPLOYEE"
         }
@@ -64,6 +71,14 @@ export default function NewEmployeePage() {
         queryKey: ["departments"],
         queryFn: async () => {
         const res = await fetch(`/api/company/${companyId}/department`);
+            return res.json()
+        },
+    })
+
+    const { data: shifts } = useQuery({
+        queryKey: ["shifts"],
+        queryFn: async () => {
+        const res = await fetch(`/api/company/${companyId}/shifts`);
             return res.json()
         },
     })
@@ -80,6 +95,7 @@ export default function NewEmployeePage() {
         formData.append("password", data.password);
         formData.append("name", data.name);
         formData.append("departmentId", data.departmentId);
+        formData.append("shiftId", data.shiftId);
         formData.append("baseSalary", String(data.baseSalary));
         formData.append("role", data.role);
         formData.append("image", image); // File object
@@ -102,6 +118,7 @@ export default function NewEmployeePage() {
             queryClient.invalidateQueries({ queryKey: ["admins"] });
             reset();
             setImage(null);
+            router.push(`/company/${companyId}/admin/manage-employee`)
         },
         onError: (error: any) => {
             toast.error(error.message || "Failed to create employee");
@@ -144,11 +161,45 @@ export default function NewEmployeePage() {
                         <div className="flex flex-col sm:flex-row sm:justify-between gap-4">
                             <div className="space-y-3 flex-1">
                                 <Label>Password</Label>
+                                <div className="flex gap-2">
+                                    <div className="relative w-full">
+                                        <Input
+                                        type={isShow ? "text" : "password"}
+                                        placeholder="Enter Password"
+                                        {...register("password")}
+                                        className="flex-1"
+                                        />
+                                        <button 
+                                        type='button'
+                                        onClick={() => setIsShow(!isShow)}
+                                        aria-label={isShow ? "Hide password" : "Show password"}
+                                        className='absolute top-1/2 -translate-y-1/2 right-3 cursor-pointer'>
+                                            {isShow ? <Eye width={20} /> : <EyeOff width={20} />}
+                                        </button>
+                                    </div>
+                                    <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => {
+                                        const newPassword = generateRandomPassword(6);
+                                        setValue("password", newPassword);
+                                    }}
+                                    className="cursor-pointer"
+                                    >
+                                    <RefreshCcw size={12} />
+                                    </Button>
+                                </div>
+                                {errors.password && (
+                                    <p className="text-red-500 text-sm">{errors.password.message}</p>
+                                )}
+                            </div>
+                            {/* <div className="space-y-3 flex-1">
+                                <Label>Password</Label>
                                 <Input placeholder="Enter Password"
                                 className=""
                                 {...register("password")}  />
                                 {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
-                            </div>
+                            </div> */}
                             <div className="space-y-3 flex-1">
                                 <Label>Department</Label>
                                 <Select  onValueChange={(value) => setValue("departmentId", value)}>
@@ -201,6 +252,22 @@ export default function NewEmployeePage() {
                                 </Select>
                                 {errors.role && <p className="text-red-500 text-sm">{errors.role.message}</p>}
                             </div>
+                        </div>
+                        <div className="space-y-3 flex-1">
+                            <Label>Shift</Label>
+                            <Select  onValueChange={(value) => setValue("shiftId", value)}>
+                                <SelectTrigger className="w-full" >
+                                    <SelectValue placeholder="Select Shift" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {shifts?.map((shift: any) => (
+                                        <SelectItem key={shift.id} value={String(shift.id)}>
+                                            {shift.name} {formatDateToTimeString(shift.startTime)} - {formatDateToTimeString(shift.endTime)}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.shiftId && <p className="text-red-500 text-sm">{errors.shiftId.message}</p>}
                         </div>
                         <div className="space-y-3 flex-1">
                             <Label>Profile Picture</Label>

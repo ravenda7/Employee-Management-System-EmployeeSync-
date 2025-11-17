@@ -14,7 +14,9 @@ export const getEmployeeById = cache(async (id: string) => {
                 email: true,
                 avatarUrl: true,
                 departmentId: true,
+                shiftId: true,
                 baseSalary: true,
+                shift: true,
             }
         });
 

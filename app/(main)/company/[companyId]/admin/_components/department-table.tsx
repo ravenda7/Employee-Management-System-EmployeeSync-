@@ -7,14 +7,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 import { Boxes, Search, SquarePen, Trash2 } from "lucide-react"
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationLink,
-} from "@/components/ui/pagination"
 import { useConfirmDialog } from "@/context/confirm-dialog"
 import DepartmentDialog from "./add-department-dialog"
 import { useSessionData } from "@/context/session"

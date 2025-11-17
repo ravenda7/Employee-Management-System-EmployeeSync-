@@ -5,11 +5,12 @@ import React, { createContext, useContext, ReactNode } from 'react';
 import { Session } from 'next-auth';
 
 // Define the simplified user object we expose
-interface UserData {
+export interface UserData {
     id: string;
     email: string;
     companyId: string; 
     role: string;
+    name: string;
     // Add other fields needed across the client app
 }
 
@@ -31,7 +32,9 @@ export const DataSessionProvider: React.FC<SessionProviderProps> = ({ children, 
         id: initialSession.user.id || '',
         email: initialSession.user.email || '',
         companyId: initialSession.user.companyId,
-        role: initialSession.user.role || 'employee', // Assuming role is available on user object
+        role: initialSession.user.role || 'employee',
+        name: initialSession.user.name || '',
+       // Assuming role is available on user object
     } : null;
 
     const contextValue: SessionContextValue = { user };

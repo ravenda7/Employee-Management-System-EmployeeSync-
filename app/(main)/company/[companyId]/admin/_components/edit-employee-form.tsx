@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { MoveLeft, X } from "lucide-react";
 import ImageUpload from "./image-upload";
 import { useRouter } from "next/navigation";
+import { formatDateToTimeString } from "@/lib/time";
 
 interface EmployeeById {
   id: string;
@@ -21,6 +22,7 @@ interface EmployeeById {
   email: string;
   avatarUrl: string | null;
   departmentId: string | null;
+  shiftId: string | null;
   baseSalary: number | null;
 }
 
@@ -29,6 +31,7 @@ const employeeSchema = z.object({
   name: z.string().min(1, "Name is required"),
   departmentId: z.string().uuid("Invalid department ID"),
   baseSalary: z.number().min(0, "Base salary must be a positive number"),
+  shiftId: z.string().uuid("Invalid shift ID"),
 });
 
 type EmployeeFormData = z.infer<typeof employeeSchema>;
@@ -60,14 +63,23 @@ export default function EditEmployeeForm({ initialData }: Props) {
       email: initialData.email,
       name: initialData.name,
       departmentId: initialData.departmentId ?? "",
+      shiftId: initialData.shiftId ?? "",
       baseSalary: initialData.baseSalary ?? 0,
     },
   });
 
   const { data: departments } = useQuery({
-    queryKey: ["departments"],
+    queryKey: ["departments", companyId],
     queryFn: async () => {
       const res = await fetch(`/api/company/${companyId}/department`);
+      return res.json();
+    },
+  });
+
+  const { data: shifts } = useQuery({
+    queryKey: ["shifts", companyId],
+    queryFn: async () => {
+      const res = await fetch(`/api/company/${companyId}/shifts`);
       return res.json();
     },
   });
@@ -78,6 +90,7 @@ export default function EditEmployeeForm({ initialData }: Props) {
       formData.append("email", data.email);
       formData.append("name", data.name);
       formData.append("departmentId", data.departmentId);
+      formData.append("shiftId", data.shiftId);
       formData.append("baseSalary", String(data.baseSalary));
 
       // ✅ Only append the file if a new one is selected
@@ -182,6 +195,29 @@ export default function EditEmployeeForm({ initialData }: Props) {
                 )}
               </div>
             </div>
+
+            {/* --- Shifts --- */}
+             <div className="space-y-3 flex-1">
+                <Label>Shift</Label>
+                <Select
+                value={watch("shiftId") || ""}
+                onValueChange={(value) => setValue("shiftId", value)}
+                >
+                <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select Shift" />
+                </SelectTrigger>
+                <SelectContent>
+                    {shifts?.map((shift: any) => (
+                    <SelectItem key={shift.id} value={shift.id}>
+                        {shift.name} {formatDateToTimeString(shift.startTime)} - {formatDateToTimeString(shift.endTime)}
+                    </SelectItem>
+                    ))}
+                </SelectContent>
+                </Select>
+                {errors.shiftId && (
+                  <p className="text-red-500 text-sm">{errors.shiftId.message}</p>
+                )}
+              </div>
 
             {/* --- Profile Image --- */}
             <div className="space-y-3 flex-1">

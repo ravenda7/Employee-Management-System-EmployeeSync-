@@ -102,7 +102,7 @@ export function NavUser({
                 signOut(
                     {
                         redirect: true,
-                        callbackUrl: `${window.location.origin}/sign-in`,
+                        callbackUrl: `${window.location.origin}/login`,
                   })}
             >
               <LogOut />

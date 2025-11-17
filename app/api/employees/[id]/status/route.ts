@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import z from "zod";
+import { NextRequest, NextResponse } from "next/server";
 
 const updateSchema = z.object({
     isActive: z.boolean(),
@@ -11,7 +12,7 @@ interface EmployeeStatusAPI {
   }>;
 }
 
-export async function PATCH(req: Request, context: EmployeeStatusAPI) {
+export async function PATCH(req: NextRequest, context: EmployeeStatusAPI) {
     try {
         const params = await context.params;
         const employeeId = params.id;
@@ -31,13 +32,13 @@ export async function PATCH(req: Request, context: EmployeeStatusAPI) {
             },
         });
 
-        return new Response(JSON.stringify(updatedEmployee), {
+        return new NextResponse(JSON.stringify(updatedEmployee), {
             status: 200,
             headers: { "Content-Type": "application/json" },
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: "Failed to update employee status" }), {
+        return new NextResponse(JSON.stringify({ error: "Failed to update employee status" }), {
             status: 500,
             headers: { "Content-Type": "application/json" },
         });

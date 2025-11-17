@@ -6,6 +6,8 @@ import { authOptions } from "../api/auth/[...nextauth]/route";
 import { redirect } from "next/navigation";
 import { getCompanyDetails, SidebarData } from "@/lib/queries";
 import { DataSessionProvider } from "@/context/session";
+import { FpjsClientProvider } from "@/provider/fpjs-provider";
+import { NoteDialogProvider } from "@/context/note-dialog";
 
 export default async function CompanyLayout({
     children,
@@ -29,25 +31,29 @@ export default async function CompanyLayout({
     return (
         <>
         <DataSessionProvider initialSession={session}>
-            <ConfirmDialogProvider>
-                <SidebarProvider
-                    style={
-                    {
-                        "--sidebar-width": "calc(var(--spacing) * 72)",
-                        "--header-height": "calc(var(--spacing) * 12)",
-                    } as React.CSSProperties
-                    }
-                >
-                    <AppSidebar variant="inset" sidebarData={sidebarData} />
-                    <SidebarInset>
-                    <div className="flex flex-1 flex-col">
-                    <div className="@container/main flex flex-1 flex-col gap-2">
-                        {children}
-                    </div>
-                    </div>
-                    </SidebarInset>
-                </SidebarProvider>
-            </ConfirmDialogProvider>
+            <FpjsClientProvider>
+                <ConfirmDialogProvider>
+                    <NoteDialogProvider>
+                        <SidebarProvider
+                            style={
+                            {
+                                "--sidebar-width": "calc(var(--spacing) * 72)",
+                                "--header-height": "calc(var(--spacing) * 12)",
+                            } as React.CSSProperties
+                            }
+                        >
+                            <AppSidebar variant="inset" sidebarData={sidebarData} />
+                            <SidebarInset>
+                            <div className="flex flex-1 flex-col">
+                            <div className="@container/main flex flex-1 flex-col gap-2">
+                                {children}
+                            </div>
+                            </div>
+                            </SidebarInset>
+                        </SidebarProvider>
+                    </NoteDialogProvider>
+                </ConfirmDialogProvider>
+            </FpjsClientProvider>
             </DataSessionProvider>
         </>
     )
