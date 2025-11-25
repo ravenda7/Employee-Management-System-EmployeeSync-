@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { db } from "@/lib/db";
 import { z } from "zod";
 import { authOptions } from "../../auth/[...nextauth]/route";
+import { sendLeaveDecisionEmail } from "@/helpers/send-leave-decission-email";
 
 const updateSchema = z.object({
   status: z.enum(["APPROVED", "REJECTED"]),
@@ -57,14 +58,6 @@ export async function PATCH(
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
 
-  // Optionally: only allow HR/CompanyAdmin
-  // const canManage =
-  //   user.role === "COMPANY_ADMIN" || user.role === "COMPANY_HR" || isSuperAdmin;
-  // if (!canManage) {
-  //   return NextResponse.json({ message: "Forbidden" }, { status: 403 });
-  // }
-
-  // Avoid noop if already that status
   if (leave.status === status) {
     return NextResponse.json(
       { message: "Leave is already in that status" },
@@ -87,17 +80,37 @@ export async function PATCH(
       leaveType: {
         select: { name: true },
       },
+      company: {
+        select: { name: true },
+      },
     },
   });
 
-  // TODO: later you can send email here:
-  // await sendLeaveDecisionEmail({
-  //   to: updated.employee.email,
-  //   employeeName: updated.employee.name,
-  //   leaveTypeName: updated.leaveType.name,
-  //   status,
-  //   decisionNote: updated.decisionNote ?? undefined,
-  // });
+if (updated.employee.email && updated.employee.name) {
+    const dashboardUrl =
+      `${process.env.NEXT_PUBLIC_BASE_URL}/employee/dashboard` || "";
+
+    const emailResponse = await sendLeaveDecisionEmail({
+      employeeName: updated.employee.name,
+      employeeEmail: updated.employee.email,
+      companyName: updated.company.name,
+      leaveType: updated.leaveType.name,
+      startDate: updated.startDate.toDateString(),
+      endDate: updated.endDate.toDateString(),
+      duration: updated.duration,
+      status, // "APPROVED" | "REJECTED"
+      decisionNote: decisionNote ?? undefined,
+      dashboardUrl,
+    });
+
+    if (!emailResponse.success) {
+      console.error(
+        "Failed to send leave decision email:",
+        emailResponse.message
+      );
+    }
+  }
+
 
   return NextResponse.json(updated);
 }

@@ -230,44 +230,52 @@ const allMenuItems: NavItem[] = [
     icon: LayoutDashboard,
     requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR", "EMPLOYEE"],
   },
-  {
-    title: "Manage Employee",
-    url: "/manage-employee",
-    icon: IdCardLanyard,
-    requiredRoles: ["COMPANY_ADMIN"],
-  },
-  {
-    title: "Manage Shifts",
-    url: "/manage-shifts",
-    icon: CalendarSync,
-    requiredRoles: ["COMPANY_ADMIN"],
-  },
+  // {
+  //   title: "Manage Employee",
+  //   url: "/manage-employee",
+  //   icon: IdCardLanyard,
+  //   requiredRoles: ["COMPANY_ADMIN"],
+  // },
+  // {
+  //   title: "Manage Shifts",
+  //   url: "/manage-shifts",
+  //   icon: CalendarSync,
+  //   requiredRoles: ["COMPANY_ADMIN"],
+  // },
   {
     title: "Whitelist IP",
     url: "/ip-whitelist",
     icon: Podcast,
     requiredRoles: ["COMPANY_ADMIN"],
   },
-  {
-    title: "My Profile",
-    url: "/profile",
-    icon: Users,
-    requiredRoles: ["EMPLOYEE"],
-  },
-  {
-    title: "Departments",
-    url: "/department",
-    icon: Building2,
-    requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR"],
-  },
-  {
-    title: "Notifications",
-    url: "/notifications",
-    icon: Bell,
-    requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR", "EMPLOYEE"],
-  },
+  // {
+  //   title: "Departments",
+  //   url: "/department",
+  //   icon: Building2,
+  //   requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR"],
+  // },
 
-  // ⭐ NEW: Leave group with collapsible children
+  // NEW: organization group with collapsible children
+    {
+    title: "Management",
+    icon: CalendarSync,
+    requiredRoles: ["COMPANY_ADMIN", "COMPANY_HR"],
+    // relative URLs, they will be prefixed with /company/[id]/[role]
+    items: [
+      {
+        title: "Shifts",
+        url: "/manage-shifts",
+      },
+      {
+        title: "Employee",
+        url: "/manage-employee",
+      },
+      {
+        title: "Departments",
+        url: "/department",
+      },
+    ],
+  },
   {
     title: "Leave",
     icon: CalendarRange,
