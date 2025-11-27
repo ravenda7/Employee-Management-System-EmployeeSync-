@@ -21,12 +21,16 @@ export default async function CompanyLayout({
     const user = session.user;
     const companyName = await getCompanyDetails(user?.companyId ?? "");
 
+    console.log("user:" , user);
+
     const sidebarData: SidebarData = {
         name: user.name || 'User', // Use fallback for name if optional
         companyId: user.companyId || '',
         email: user.email || '',
         role:user.role || '',
         companyName: companyName?.companyName || '',
+        id: user.id || '',
+        image: user.image || '',
     };
     return (
         <>

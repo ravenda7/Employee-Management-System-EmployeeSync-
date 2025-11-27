@@ -172,13 +172,11 @@ import {
 } from "@/components/ui/sidebar"
 import {
   LayoutDashboard,
-  IdCardLanyard,
-  Users,
-  Building2,
-  Bell,
+  Wallet,
   Podcast,
   CalendarSync,
-  CalendarRange, // 👈 new icon for Leave
+  CalendarRange,
+  CheckSquare2, // 👈 new icon for Leave
 } from "lucide-react"
 import { NavMain } from "./nav-main"
 import Link from "next/link"
@@ -292,6 +290,18 @@ const allMenuItems: NavItem[] = [
       },
     ],
   },
+  {
+    title: "Attendance",
+    url: "/attendance",
+    icon: CheckSquare2,
+    requiredRoles: ["COMPANY_ADMIN","COMPANY_HR","EMPLOYEE"],
+  },
+    {
+    title: "Payroll",
+    url: "/payroll",
+    icon: Wallet,
+    requiredRoles: ["COMPANY_ADMIN","COMPANY_HR","EMPLOYEE"],
+  },
 
   { 
     title: "Leave",
@@ -302,12 +312,12 @@ const allMenuItems: NavItem[] = [
 ]
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
-  sidebarData: SidebarData & { role: string; email: string; companyId: string }
+  sidebarData: SidebarData & { role: string; email: string; companyId: string, id: string, image?: string }
   variant: "inset"
 }
 
 export function AppSidebar({ variant, sidebarData, ...props }: AppSidebarProps) {
-  const { name, email, companyName, role, companyId } = sidebarData
+  const { name, email, companyName, role, companyId, id, image } = sidebarData
 
   const companyBase = `/company/${companyId}`
   const rolePrefix = getRolePrefix(role)
@@ -365,7 +375,9 @@ export function AppSidebar({ variant, sidebarData, ...props }: AppSidebarProps) 
           user={{
             name: name ?? "",
             email: email ?? "",
-            avatar: "",
+            id: id ?? "",
+            companyId: companyId ?? "",
+            image: image ?? "",
           }}
         />
       </SidebarFooter>

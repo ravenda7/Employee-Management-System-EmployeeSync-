@@ -45,7 +45,7 @@ export default function Hero({  employeeData }: Props) {
     const shiftStartTime = employeeData.shift ? formatDateToTimeString(employeeData.shift.startTime) : "";
     const shiftEndTime = employeeData.shift ? formatDateToTimeString(employeeData.shift.endTime) : "";
     return (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between w-full gap-x-4">
+        <div className="flex flex-col lg:flex-row sm:items-center justify-between w-full gap-x-4 gap-y-4">
                 <div className="w-full flex gap-2 rounded-lg bg-sky-300 p-6">
                     <div className="w-full flex flex-col justify-between">
                         <p className="font-mono text-slate-700 text-[14px]">{getFormattedTodayDate()}</p>
@@ -62,7 +62,9 @@ export default function Hero({  employeeData }: Props) {
                         />
                     </div>
                 </div>
+                <div className="w-full">
                 <QuickActions />
+                </div>
             </div>
     )
 }

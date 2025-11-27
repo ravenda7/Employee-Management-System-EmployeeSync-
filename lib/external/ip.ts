@@ -20,3 +20,11 @@ export function getClientIp(req: NextRequest): string {
 
   return ip;
 }
+
+
+// lib/ip.ts
+export function ipToInt(ip: string): number {
+  return ip
+    .split(".")
+    .reduce((int, octet) => (int << 8) + parseInt(octet, 10), 0) >>> 0;
+}

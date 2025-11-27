@@ -1,27 +1,24 @@
 "use client";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
 import Link from "next/link";
-import { Command, Loader } from "lucide-react";
+import { Command } from "lucide-react";
 import { SidebarItem } from "./sidebar-item";
-import { SidebarDropdownItem } from "./siderbar-dropdown-item";
 import AdminAvatar from "./admin-avatar";
-import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
-import { useQuery } from "@tanstack/react-query";
 type Props = {
     className?: string;
+    user?: any;
 };
 
-export const  Sidebar = ({className} : Props) => {
-    const { data: user, isLoading: isUserLoading } = useQuery<UserData>({
-        queryKey: ['user'],
-        queryFn: async () => {
-            const res = await fetch('/api/user');
-            if (!res.ok) throw new Error('Failed to fetch user');
-            return res.json();
-        }
-    });
+export const  Sidebar = ({className, user} : Props) => {
+    // const { data: user, isLoading: isUserLoading } = useQuery<UserData>({
+    //     queryKey: ['user'],
+    //     queryFn: async () => {
+    //         const res = await fetch('/api/user');
+    //         if (!res.ok) throw new Error('Failed to fetch user');
+    //         return res.json();
+    //     }
+    // });
 
     return(
         <div className={cn(
@@ -42,30 +39,18 @@ export const  Sidebar = ({className} : Props) => {
                iconSrc="/icons/dashboard.svg"
                />
 
-               <SidebarDropdownItem
-               label="User"
-               href="/super-admin/user"
+                <SidebarItem 
+               label="Tenants" 
+               href="/super-admin/tenants"
                iconSrc="/icons/user.svg"
                />
 
             </div> 
             
-            <div className="py-6 flex flex-col  gap-y-2">
-                <Link href="/superadmin/setting">
-                <Button variant="unactive" className="w-full flex flex-row justify-between items-center h-[40px] px-[28px]">
-                    <div className="flex items-center gap-2">
-                        <Image src="/icons/setting.svg" height={20} width={20} alt="Chat Icon" />
-                        <p>Setting</p>
-                    </div>
-                </Button>
-                </Link>
+            <div className="py-6">
                 <div className="px-[16px] flex flex-col gap-3">
                     <Separator className="my-2" />
-                    { isUserLoading ? (
-                    <Loader className="h-5 w-5 rext-muted-foreground animate-spin" />
-                    ): (
-                    <AdminAvatar userName={user?.name} />
-                    )}
+                    <AdminAvatar userName={user?.name || "SuperAdmin"} />
                 </div>
             </div>
         </div>

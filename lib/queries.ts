@@ -8,6 +8,8 @@ export interface SidebarData {
     email: string;
     companyName: string;
     role: string;
+    id: string;
+    image?: string;
 }
 
 

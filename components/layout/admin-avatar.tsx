@@ -18,11 +18,11 @@ export default function AdminAvatar({ userName }: Props) {
             <p className="text-white">{userName}</p>
         </div>
         <button className="text-white hover:cursor-pointer" onClick={() => 
-            signOut(
-                {
-                    redirect: true,
-                    callbackUrl: `${window.location.origin}`,
-              })}>
+        signOut(
+            {
+                redirect: true,
+                callbackUrl: `${window.location.origin}/login`,
+          })}>
           <LogOut width={20} height={20} />
         </button>
     </div>

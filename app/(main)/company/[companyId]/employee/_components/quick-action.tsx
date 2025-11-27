@@ -243,7 +243,7 @@ const QuickActions: React.FC = () => {
         <CardDescription>Mark your attendance for today</CardDescription>
       </CardHeader>
 
-      <CardContent className="w-full sm:w-[350px] space-y-3">
+      <CardContent className="w-full space-y-3">
         {isLoading ? (
           <p className="text-sm text-muted-foreground">Loading...</p>
         ) : (

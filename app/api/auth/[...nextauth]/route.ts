@@ -49,6 +49,7 @@ export const authOptions: NextAuthOptions = {
           role: employee.role,
           companyId: employee.companyId,
           permissions: employee.permissions,
+          avatarUrl: employee.avatarUrl || undefined,
         };
       },
     }),
@@ -59,6 +60,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role as Role;
         token.companyId = (user as any).companyId;
         token.permissions = (user as any).permissions;
+        token.avatarUrl = (user as any).avatarUrl;
       }
       return token;
     },
@@ -68,6 +70,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as Role;
         session.user.companyId = token.companyId;
         session.user.permissions = token.permissions as string[];
+        session.user.image = token.avatarUrl as string | undefined;
       }
       return session;
     },
